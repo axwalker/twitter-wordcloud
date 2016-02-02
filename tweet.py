@@ -24,6 +24,12 @@ def main():
     wordle.save("wordle.png")
 
 
+def get_twitter_api():
+    auth = tweepy.OAuthHandler(myauth.consumer_key, myauth.consumer_secret)
+    auth.set_access_token(myauth.access_token, myauth.access_token_secret)
+    return tweepy.API(auth)
+
+
 def recent_replies(api, user, since_days_ago=1, max_tweets=1000):
     since_cutoff = datetime.today() - timedelta(days=since_days_ago)
 
@@ -36,7 +42,7 @@ def recent_replies(api, user, since_days_ago=1, max_tweets=1000):
 
 def words_from_tweets(tweets):
     ignore_words = {"RT"}
-    
+
     def remove_users(s):
         return re.sub("@\w+", " ", s)
 
@@ -49,12 +55,6 @@ def words_from_tweets(tweets):
     words = re.sub("[^\w']", " ", text).split()
     words = (str(w) for w in words if w not in ignore_words)
     return " ".join(words)
-
-
-def get_twitter_api():
-    auth = tweepy.OAuthHandler(myauth.consumer_key, myauth.consumer_secret)
-    auth.set_access_token(myauth.access_token, myauth.access_token_secret)
-    return tweepy.API(auth)
 
 
 if __name__ == '__main__':
