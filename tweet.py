@@ -25,7 +25,7 @@ def post_word_clouds():
         for user, wordle in zip(users, word_clouds):
             wordle_path = os.path.join(temp_dir, '{}_wordle.png'.format(user))
             wordle.save(wordle_path)
-            status = 'Daily mention wordle for @{}'.format(user)
+            status = 'Daily mention word cloud for @{}'.format(user)
             twitter.tweet(wordle_path, status=status)
 
 
