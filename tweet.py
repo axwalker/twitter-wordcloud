@@ -10,7 +10,7 @@ import tweepy
 from wordcloud import WordCloud
 
 
-def main():
+def post_word_clouds():
     if 'ON_HEROKU' in os.environ:
         twitter = Twitter.from_env()
     else:
@@ -19,10 +19,10 @@ def main():
     with open('twitter_users.json') as f:
         users = json.load(f)['users']
 
-    wordles = (daily_user_wordle(twitter, u) for u in users)
+    word_clouds = (daily_user_word_cloud(twitter, u) for u in users)
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        for user, wordle in zip(users, wordles):
+        for user, wordle in zip(users, word_clouds):
             wordle_path = os.path.join(temp_dir, '{}_wordle.png'.format(user))
             wordle.save(wordle_path)
             status = 'Daily mention wordle for @{}'.format(user)
@@ -39,7 +39,7 @@ class Twitter:
     def from_env(cls):
         return cls(
             consumer_key=os.environ.get('TWITTER_CONSUMER_KEY'),
-            consumer_secret=os.environ.get('TWITTER_ACCESS_TOKEN'),
+            consumer_secret=os.environ.get('TWITTER_CONSUMER_SECRET'),
             access_token=os.environ.get('TWITTER_ACCESS_TOKEN'),
             access_token_secret=os.environ.get('TWITTER_ACCESS_TOKEN_SECRET')
         )
@@ -67,7 +67,7 @@ class Twitter:
         self.api.update_with_media(img_path, status=status)
 
 
-def daily_user_wordle(twitter, username):
+def daily_user_word_cloud(twitter, username):
     mentions = twitter.mentions_since(username, days_ago=1)
     words = words_from_tweets(mentions, ignore_words={'RT'})
     mask_file = os.path.join('assets', username + '.png')
@@ -93,4 +93,4 @@ def words_from_tweets(tweets, ignore_words):
 
 
 if __name__ == '__main__':
-    main()
+    post_word_clouds()
