@@ -1,6 +1,6 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-import tweet
+import tweetcloud
 
 
 sched = BlockingScheduler()
@@ -8,7 +8,7 @@ sched = BlockingScheduler()
 
 @sched.scheduled_job('cron', day_of_week='mon-sun', hour=23)
 def scheduled_job():
-    tweet.post_word_clouds()
+    tweetcloud.post_word_clouds()
 
 
 sched.start()
