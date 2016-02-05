@@ -19,14 +19,16 @@ def post_word_clouds():
     with open('twitter_users.json') as f:
         users = json.load(f)['users']
 
-    word_clouds = (daily_user_word_cloud(twitter, u) for u in users)
+    mentions = (twitter.mentions_since(u, days_ago=1) for u in users)
+    words = (words_from_tweets(m) for m in mentions)
+    word_clouds = (word_cloud(w, u) for w, u in zip(words, users))
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        for user, wordle in zip(users, word_clouds):
-            wordle_path = os.path.join(temp_dir, '{}_wordle.png'.format(user))
-            wordle.save(wordle_path)
+        for cloud, user in zip(word_clouds, users):
+            fn = os.path.join(temp_dir, '{}_word_cloud.png'.format(user))
+            cloud.save(fn)
             status = 'Daily mention word cloud for @{}'.format(user)
-            twitter.tweet(wordle_path, status=status)
+            twitter.tweet(fn, status=status)
 
 
 class Twitter:
@@ -54,7 +56,7 @@ class Twitter:
             access_token_secret=myauth.access_token_secret
         )
 
-    def mentions_since(self, user, days_ago, max_tweets=1000):
+    def mentions_since(self, user, days_ago, max_tweets=2000):
         since_cutoff = datetime.today() - timedelta(days=days_ago)
 
         tweets = tweepy.Cursor(self.api.search, q=('@' + user), count=200).items(max_tweets)
@@ -67,9 +69,7 @@ class Twitter:
         self.api.update_with_media(img_path, status=status)
 
 
-def daily_user_word_cloud(twitter, username):
-    mentions = twitter.mentions_since(username, days_ago=1)
-    words = words_from_tweets(mentions, ignore_words={'RT'})
+def word_cloud(words, username):
     mask_file = os.path.join('assets', username + '.png')
     mask = np.array(Image.open(mask_file))
     return WordCloud(
@@ -80,15 +80,15 @@ def daily_user_word_cloud(twitter, username):
     ).generate(words).to_image()
 
 
-def words_from_tweets(tweets, ignore_words):
-    remove_urls = lambda s: re.sub(r'https?://\S+', '', s)
+def words_from_tweets(tweets):
+    remove_urls = lambda s: re.sub(r'http\S+', '', s)
     remove_users = lambda s: re.sub('@\w+', ' ', s)
 
     text = ' '.join(t.text for t in tweets)
     text = remove_urls(text)
     text = remove_users(text)
     words = re.sub("[^\w']", ' ', text).split()
-    words = (str(w) for w in words if w not in ignore_words)
+    words = (str(w) for w in words if w not in {'RT'})
     return ' '.join(words)
 
 
